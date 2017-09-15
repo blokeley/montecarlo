@@ -14,12 +14,13 @@ def energy(mass, velocity):
 
 
 # Create the mass and velocity parameters
-masses = mc.Parameter('Mass', 10, 1)
+masses = mc.Parameter(10, 1)
 masses.hist()
-# If you are not using IPython, use plt.show() here
+plt.show()
 
-velocities = mc.Parameter('Velocity', 5, 0.2)
+velocities = mc.Parameter(5, 0.2)
 velocities.hist()
+plt.show()
 
 # Perform the Monte Carlo simulation on the random variates for each Parameter
 energies = energy(masses.rvs, velocities.rvs)
