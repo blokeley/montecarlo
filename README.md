@@ -15,6 +15,7 @@ want to know, the requirements are:
 
 * matplotlib
 * numpy
+* pandas
 * scipy
 
 # Installation

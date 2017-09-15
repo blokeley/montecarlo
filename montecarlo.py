@@ -3,17 +3,27 @@
 Copyright 2016 - 2017 Tom Oakley
 MIT licence: https://opensource.org/licenses/MIT
 
+Get the latest version from:
+https://github.com/blokeley/montecarlo
+
 Ask Tom Oakley for advice before modifying this file.
+
+Versions:
+1.0 - First use
+1.1 - Add legend to histrogram.
+      Allow asymmetric tolerances in Parameter.rvs
+2.0 - Make Parameter name optional
 """
 
 import unittest
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy.stats import norm
 
 
-__version__ = '1.0'
+__version__ = '2.0'
 
 
 TRIALS = 1000000
@@ -37,16 +47,18 @@ class Parameter:
     methods such as plotting.
     """
 
-    def __init__(self, name, target, tolerance):
-        """name(str): a string identifier
-        target(float): the target value (often the mean)
-        tolerance(float): the symmetrical tolerance.  For asymmetrical
-            tolerances, set the random variates (rvs property) directly
+    def __init__(self, target, tolerance, name=''):
         """
-        self.name = name
+        Args:
+            target: the target value (often the mean)
+            tolerance: the symmetrical tolerance.  For asymmetrical
+                tolerances, set the random variates (rvs property) directly
+            name: a string identifier
+        """
         self.lsl = target - tolerance
         self.target = target
         self.usl = target + tolerance
+        self.name = name
 
     @property
     def rvs(self):
@@ -63,7 +75,7 @@ class Parameter:
         except AttributeError:
             # Calculate standard deviation
             # http://www.itl.nist.gov/div898/handbook/pmc/section1/pmc16.htm
-            std = (self.usl - self.lsl) / (6 * CP)
+            std = min(self.usl - self.target, self.target - self.lsl) / (3*CP)
             # Create random variates (rvs)
             self.rvs = norm.rvs(self.target, std, TRIALS)
             return self._rvs
@@ -78,40 +90,46 @@ class Parameter:
 
         self._rvs = variates
 
-    def hist(self):
-        """Plot a histogram and vertical lines for lower and upper
-        specification limits and target if they are given.
+    def hist(self, **kwargs):
+        """Create a histogram and vertical lines for lower and upper
+        specification limits and target.
         """
-        plt.hist(self.rvs, 100, normed=True)
-        plt.axvline(self.lsl, color='r')
-        plt.axvline(self.usl, color='r')
-        plt.axvline(self.target, color='g')
-        plt.xlabel(self.name)
-        plt.ylabel('Probability density')
-        plt.show()
+        fig, ax = plt.subplots()
+        ax.hist(self.rvs, 100, normed=True, label=self.name)
+        ax.axvline(self.lsl, color='m', label='Lower spec limit')
+        ax.axvline(self.usl, color='r', label='Upper spec limit')
+        ax.axvline(self.target, color='g', label='Target')
+        ax.set(xlabel=self.name, ylabel='Probability density')
+        ax.legend()
+        return ax
 
 
 def above(arr, maximum):
     """Return the parts per million in array arr above maximum."""
-    return 1e6 * arr[arr > maximum].size / arr.size
+    return 1000000 * arr[arr > maximum].size / arr.size
 
 
 def below(arr, minimum):
     """Return the parts per million in array arr below minimum."""
-    return 1e6 * arr[arr < minimum].size / arr.size
+    return 1000000 * arr[arr < minimum].size / arr.size
 
 
 def describe(results, units='', lsl=None, usl=None):
-    """Print useful statistics about the results."""
-    print('Mean = {:.3f} {}'.format(results.mean(), units))
+    """Return useful statistics as a pandas.Series."""
+    res = pd.Series()
+    res['Median ({})'.format(units)] = np.median(results)
+    res['Mean ({})'.format(units)] = results.mean()
+
     # Use 1 degree of freedom because this is a sample, not a population
-    print('Standard deviation = {:.3f} {}'.format(results.std(ddof=1), units))
+    res['Standard deviation ({})'.format(units)] = results.std(ddof=1)
 
     if lsl is not None:
-        print('{:.0f} ppm below {} {}'.format(below(results, lsl), lsl, units))
+        res['ppm below {} {}'.format(lsl, units)] = below(results, lsl)
 
     if usl is not None:
-        print('{:.0f} ppm above {} {}'.format(above(results, usl), usl, units))
+        res['ppm above {} {}'.format(usl, units)] = above(results, usl)
+
+    return res
 
 
 # Unit tests
@@ -121,7 +139,7 @@ class TestParameter(unittest.TestCase):
         target = 20
         tol = 2
         places = 2  # Resolution in decimal places
-        p = Parameter('My parameter', target, tol)
+        p = Parameter(target, tol)
 
         #  Test mean is near target
         self.assertAlmostEqual(target, p.rvs.mean(), places)
