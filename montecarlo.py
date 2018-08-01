@@ -13,6 +13,7 @@ Versions:
 1.1 - Add legend to histrogram.
       Allow asymmetric tolerances in Parameter.rvs
 2.0 - Make Parameter name optional
+2.0.1 - Do not use deprecated normed argument to plt.hist()
 """
 
 import unittest
@@ -23,7 +24,7 @@ import pandas as pd
 from scipy.stats import norm
 
 
-__version__ = '2.0'
+__version__ = '2.0.1'
 
 
 TRIALS = 1000000
@@ -95,7 +96,7 @@ class Parameter:
         specification limits and target.
         """
         fig, ax = plt.subplots()
-        ax.hist(self.rvs, 100, normed=True, label=self.name)
+        ax.hist(self.rvs, 100, density=True, label=self.name)
         ax.axvline(self.lsl, color='m', label='Lower spec limit')
         ax.axvline(self.usl, color='r', label='Upper spec limit')
         ax.axvline(self.target, color='g', label='Target')
