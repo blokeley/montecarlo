@@ -15,7 +15,7 @@ Versions:
 2.0 - Make Parameter name optional
 2.0.1 - Do not use deprecated normed argument to plt.hist()
 2.0.2 - Fix typo so self.rvs reads self._rvs
-2.0.3 - Add string representation of parameter
+2.0.3 - Add string representation of Parameter
 """
 
 import unittest
@@ -26,7 +26,7 @@ import pandas as pd
 from scipy.stats import norm
 
 
-__version__ = '2.0.2'
+__version__ = '2.0.3'
 
 
 TRIALS = 1000000
@@ -107,7 +107,7 @@ class Parameter:
         return ax
 
     def __str__(self):
-        return 'Parameter {} {:.2f}'.format(self.name, self.target)
+        return 'Parameter: {} {:.2f}'.format(self.name, self.target)
 
 
 def above(arr, maximum):
