@@ -14,6 +14,8 @@ Versions:
       Allow asymmetric tolerances in Parameter.rvs
 2.0 - Make Parameter name optional
 2.0.1 - Do not use deprecated normed argument to plt.hist()
+2.0.2 - Fix typo so self.rvs reads self._rvs
+2.0.3 - Add string representation of parameter
 """
 
 import unittest
@@ -24,7 +26,7 @@ import pandas as pd
 from scipy.stats import norm
 
 
-__version__ = '2.0.1'
+__version__ = '2.0.2'
 
 
 TRIALS = 1000000
@@ -78,7 +80,7 @@ class Parameter:
             # http://www.itl.nist.gov/div898/handbook/pmc/section1/pmc16.htm
             std = min(self.usl - self.target, self.target - self.lsl) / (3*CP)
             # Create random variates (rvs)
-            self.rvs = norm.rvs(self.target, std, TRIALS)
+            self._rvs = norm.rvs(self.target, std, TRIALS)
             return self._rvs
 
     @rvs.setter
@@ -103,6 +105,9 @@ class Parameter:
         ax.set(xlabel=self.name, ylabel='Probability density')
         ax.legend()
         return ax
+
+    def __str__(self):
+        return 'Parameter {} {:.2f}'.format(self.name, self.target)
 
 
 def above(arr, maximum):
