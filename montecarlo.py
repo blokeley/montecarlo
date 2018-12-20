@@ -80,7 +80,7 @@ class Parameter:
             # http://www.itl.nist.gov/div898/handbook/pmc/section1/pmc16.htm
             std = min(self.usl - self.target, self.target - self.lsl) / (3*CP)
             # Create random variates (rvs)
-            self._rvs = norm.rvs(self.target, std, TRIALS)
+            self.rvs = norm.rvs(self.target, std, TRIALS)
             return self._rvs
 
     @rvs.setter
