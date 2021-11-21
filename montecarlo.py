@@ -1,6 +1,6 @@
 """Utility classes and functions for Monte Carlo simulation.
 
-Copyright 2016 - 2017 Tom Oakley
+Copyright 2016 - 2021 Tom Oakley
 MIT licence: https://opensource.org/licenses/MIT
 
 Get the latest version from:
@@ -16,6 +16,7 @@ Versions:
 2.0.1 - Do not use deprecated normed argument to plt.hist()
 2.0.2 - Fix typo so self.rvs reads self._rvs
 2.0.3 - Add string representation of Parameter
+2.0.4 - Add repr representation of Parameter
 """
 
 import unittest
@@ -26,10 +27,11 @@ import pandas as pd
 from scipy.stats import norm
 
 
-__version__ = '2.0.3'
+__version__ = '2.0.4'
 
+MILLION = 1_000_000
 
-TRIALS = 1000000
+TRIALS = MILLION
 """Number of samples for Monte Carlo simulation"""
 
 # It is general practice to require Cp and Cpk of at least 1.33.  Sources:
@@ -88,8 +90,7 @@ class Parameter:
         """Set the random variates (samples from the distribution)."""
         # Check that the type and size of the variates array is correct
         if not (isinstance(variates, np.ndarray) and variates.size == TRIALS):
-                fmt = 'variates must be an ndarray of size {}'
-                raise ValueError(fmt.format(TRIALS))
+                raise ValueError(f'variates must be an ndarray of size {TRIALS}')
 
         self._rvs = variates
 
@@ -107,33 +108,42 @@ class Parameter:
         return ax
 
     def __str__(self):
-        return 'Parameter: {} {:.2f}'.format(self.name, self.target)
+        if self.name:
+            args = f'{self.target:.2f}, {self.name}'
+
+        else:
+            args = f'{self.target:.2f}'
+        
+        return f'Parameter({args})'
+
+    def __repr__(self):
+        return str(self)
 
 
 def above(arr, maximum):
     """Return the parts per million in array arr above maximum."""
-    return 1000000 * arr[arr > maximum].size / arr.size
+    return MILLION * arr[arr > maximum].size / arr.size
 
 
 def below(arr, minimum):
     """Return the parts per million in array arr below minimum."""
-    return 1000000 * arr[arr < minimum].size / arr.size
+    return MILLION * arr[arr < minimum].size / arr.size
 
 
 def describe(results, units='', lsl=None, usl=None):
     """Return useful statistics as a pandas.Series."""
     res = pd.Series()
-    res['Median ({})'.format(units)] = np.median(results)
-    res['Mean ({})'.format(units)] = results.mean()
+    res[f'Median ({units})'] = np.median(results)
+    res[f'Mean ({units})'] = results.mean()
 
     # Use 1 degree of freedom because this is a sample, not a population
-    res['Standard deviation ({})'.format(units)] = results.std(ddof=1)
+    res[f'Standard deviation ({units})'] = results.std(ddof=1)
 
     if lsl is not None:
-        res['ppm below {} {}'.format(lsl, units)] = below(results, lsl)
+        res[f'ppm below {lsl} {units}'] = below(results, lsl)
 
     if usl is not None:
-        res['ppm above {} {}'.format(usl, units)] = above(results, usl)
+        res[f'ppm above {usl} {units}'] = above(results, usl)
 
     return res
 
